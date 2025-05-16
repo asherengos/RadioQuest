@@ -1,33 +1,70 @@
-# Gradle files
+# --- Android/Gradle (existing rules) ---
 .gradle/
 build/
-
-# Local configuration file (sdk path, etc)
 local.properties
-
-# Log/OS Files
 *.log
-
-# Android Studio generated files and folders
 captures/
 .externalNativeBuild/
 .cxx/
 *.apk
 output.json
-
-# IntelliJ
 *.iml
 .idea/
 misc.xml
 deploymentTargetDropDown.xml
 render.experimental.xml
-
-# Keystore files
 *.jks
 *.keystore
-
-# Google Services (e.g. APIs or Firebase)
 google-services.json
-
-# Android Profiling
 *.hprof
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# --- Firebase ---
+.firebase/
+firebase-debug.log
+.firebaserc
+firebase-key.json
+.runtimeconfig.json
+
+# --- Environment variables and secrets ---
+.env
+.env.*
+*.env
+*.env.*
+*.key
+
+# --- IDEs and editors ---
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+
+# --- Blog/automation local files ---
+daily_tasks.json
+logs/
