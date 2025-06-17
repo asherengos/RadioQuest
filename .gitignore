@@ -46,4 +46,13 @@ filelist.txt
 *.json
 *.key
 *.pem
-local.properties 
+local.properties
+
+# AI Models
+models/
+
+# Test scripts
+test_mongo.py
+
+# Filter-repo artifacts
+--invert-paths 
