@@ -1,0 +1,49 @@
+# Environment variables
+.env
+*.env.local
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.idea/
+.vscode/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Large media files (keep in GCS)
+*.mp3
+*.mp4
+audio/
+clips/
+video_assets/
+
+# Temporary files
+*.tmp
+*.bak
+1234.txt
+filelist.txt
+
+# Credentials or secrets (CRITICAL)
+*.json
+*.key
+*.pem
+local.properties 
