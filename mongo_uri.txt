@@ -1,1 +1,1 @@
-mongodb+srv://<db_username>:<IhIXgmttgjhGe0Cs>@radioquestcluster.bows3jq.mongodb.net/?retryWrites=true&w=majority&appName=RadioQuestCluster"
+[REDACTED_MONGODB_URI]

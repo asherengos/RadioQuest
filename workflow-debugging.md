@@ -151,7 +151,7 @@ gcloud secrets create gcp-creds-secret --data-file=credentials.json
 
 # Update service with proper secret mounting
 gcloud run services update radioquest \
-    --update-env-vars MONGO_URI="mongodb+srv://asher:ACTUAL_PASSWORD@cluster0.mongodb.net/RadioQuest?retryWrites=true&w=majority" \
+    --update-env-vars MONGO_URI="[REDACTED_MONGODB_URI]" \
     --update-env-vars GOOGLE_APPLICATION_CREDENTIALS="/etc/secrets/gcp-creds.json" \
     --region us-central1
 ```

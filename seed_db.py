@@ -8,7 +8,7 @@ from bson.objectid import ObjectId
 MONGO_URI = os.environ.get("MONGO_URI")
 if MONGO_URI:
     MONGO_URI = MONGO_URI.strip('\'"') # Strip both single and double quotes
-# MONGO_URI = "mongodb+srv://radiogod:8rH7gF9pp5H9o0me@radioquestcluster.bows3jq.mongodb.net/?retryWrites=true&w=majority&appName=RadioQuestCluster"
+# MONGO_URI = "[REDACTED_MONGODB_URI]"
 
 MODEL_PATH = './models/all-MiniLM-L6-v2'
 
