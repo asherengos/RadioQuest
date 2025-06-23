@@ -317,7 +317,50 @@ orchestrator = ADKOrchestrator()
 def index():
     """Home page. The entry point for the adventure."""
     logger.info("Serving index page")
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Template error: {e}")
+        # Fallback to a simple HTML response
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>RadioQuest - AI Storytelling</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 50px; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .btn { display: inline-block; padding: 15px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 10px; }
+                .btn:hover { background: #0056b3; }
+                .api-link { background: #28a745; }
+                .api-link:hover { background: #1e7e34; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎯 RadioQuest - ADK Hackathon Demo</h1>
+                <p>AI-powered storytelling platform for children in Goma, DR Congo</p>
+                <p>Showcasing multi-agent orchestration with ADK-inspired architecture</p>
+                
+                <h2>🚀 ADK Demo Endpoints:</h2>
+                <a href="/adk-demo" class="btn api-link">ADK Architecture Overview</a><br>
+                <a href="/adk/story/intro" class="btn api-link">Story Agent Workflow</a><br>
+                <a href="/adk/search?q=forest" class="btn api-link">Search Agent Demo</a><br>
+                <a href="/health" class="btn">System Health Check</a><br>
+                
+                <h2>📚 Standard Endpoints:</h2>
+                <a href="/story/intro" class="btn">Welcome Story</a><br>
+                <a href="/search?q=goma" class="btn">Story Search</a><br>
+                
+                <p style="margin-top: 30px; font-size: 14px; opacity: 0.8;">
+                    Built for the 2025 ADK Hackathon | <a href="https://github.com/asherengos/radioquest" style="color: #17a2b8;">GitHub</a>
+                </p>
+            </div>
+        </body>
+        </html>
+        '''
 
 @app.route('/story/<story_id>')
 def story(story_id):
