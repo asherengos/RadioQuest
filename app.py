@@ -76,21 +76,52 @@ def story(story_id):
         return "Database not available", 500
     
     try:
-        # Try to fetch from MongoDB, fallback to mock data
-        try:
-            segment = stories_collection.find_one({"_id": story_id})
-        except Exception as db_error:
-            logger.warning(f"MongoDB error, using mock data: {db_error}")
-            # Mock data for demo
-            segment = {
-                "_id": story_id,
-                "title": f"The Adventure of {story_id.title()}",
-                "content": f"Welcome to RadioQuest! This is a demo story about {story_id}. In the heart of Goma, children gather around solar-powered radios to hear magical tales that transport them to new worlds. This interactive storytelling platform uses Google Cloud AI to bring education and joy to thousands of young minds.",
+        # Enhanced mock data for demo reliability
+        MOCK_STORIES = {
+            "intro": {
+                "_id": "intro",
+                "title": "Welcome to Goma",
+                "content": "Once upon a time in the beautiful city of Goma, nestled between Lake Kivu and the Virunga Mountains, a group of curious children discovered something magical. Through their solar-powered radios, they could hear stories that came alive with voices from their own land. This is RadioQuest - where every story is an adventure, and every child is the hero of their own tale.",
                 "choices": [
-                    {"id": "choice1", "text": "Continue the adventure"},
-                    {"id": "choice2", "text": "Explore the magical forest"}
+                    {"id": "forest", "text": "Explore the enchanted forest"},
+                    {"id": "mountain", "text": "Climb the mystical mountain"}
+                ]
+            },
+            "forest": {
+                "_id": "forest", 
+                "title": "The Enchanted Forest Adventure",
+                "content": "You venture into the lush forests of Virunga, where ancient trees whisper secrets and colorful birds guide your path. The children of Goma often play here, but today you discover something extraordinary - a hidden grove where stories grow on trees like magical fruit, waiting to be shared with the world.",
+                "choices": [
+                    {"id": "village", "text": "Return to the village"},
+                    {"id": "lake", "text": "Head to Lake Kivu"}
+                ]
+            },
+            "mountain": {
+                "_id": "mountain",
+                "title": "Mountain Peak Stories", 
+                "content": "High atop the Virunga Mountains, you find a place where the clouds touch the earth and the views stretch across all of Eastern Africa. Here, the elders say, is where all the best stories begin - with a view so vast it contains infinite possibilities for adventure.",
+                "choices": [
+                    {"id": "intro", "text": "Start a new adventure"},
+                    {"id": "village", "text": "Visit the village below"}
                 ]
             }
+        }
+        
+        # Try to fetch from MongoDB first, fallback to enhanced mock data
+        try:
+            if stories_collection is not None:
+                segment = stories_collection.find_one({"_id": story_id})
+                if segment:
+                    logger.info(f"Found story in MongoDB: {segment.get('title', 'Unknown')}")
+                else:
+                    logger.info(f"Story {story_id} not found in MongoDB, using mock data")
+                    segment = MOCK_STORIES.get(story_id)
+            else:
+                logger.info(f"MongoDB not available, using mock data for {story_id}")
+                segment = MOCK_STORIES.get(story_id)
+        except Exception as db_error:
+            logger.warning(f"MongoDB error, using mock data: {db_error}")
+            segment = MOCK_STORIES.get(story_id)
         
         if segment:
             logger.info(f"Found story segment: {segment.get('title', 'Unknown')}")
@@ -128,22 +159,35 @@ def search():
         return jsonify({"error": "Database not available"}), 500
     
     try:
-        # Try MongoDB search, fallback to mock results
+        # Enhanced mock search results
+        MOCK_SEARCH_RESULTS = [
+            {"_id": "intro", "title": "Welcome to Goma", "content": "Stories from the heart of Goma..."},
+            {"_id": "forest", "title": "The Enchanted Forest Adventure", "content": "Magical adventures in Virunga forests..."},
+            {"_id": "mountain", "title": "Mountain Peak Stories", "content": "Tales from the high peaks of Virunga..."},
+            {"_id": "village", "title": "Village Life Chronicles", "content": "Daily adventures in Goma village..."},
+            {"_id": "lake", "title": "Lake Kivu Legends", "content": "Ancient stories from the shores of Lake Kivu..."}
+        ]
+        
+        # Try MongoDB search, fallback to enhanced mock results
         try:
-            results = list(stories_collection.find({
-                "$or": [
-                    {"title": {"$regex": query, "$options": "i"}},
-                    {"content": {"$regex": query, "$options": "i"}}
-                ]
-            }).limit(10))
+            if stories_collection is not None:
+                results = list(stories_collection.find({
+                    "$or": [
+                        {"title": {"$regex": query, "$options": "i"}},
+                        {"content": {"$regex": query, "$options": "i"}}
+                    ]
+                }).limit(10))
+                if results:
+                    logger.info(f"Found {len(results)} results in MongoDB")
+                else:
+                    logger.info(f"No MongoDB results for '{query}', using mock data")
+                    results = [r for r in MOCK_SEARCH_RESULTS if query.lower() in r["title"].lower() or query.lower() in r["content"].lower()]
+            else:
+                logger.info(f"MongoDB not available, using mock search results")
+                results = [r for r in MOCK_SEARCH_RESULTS if query.lower() in r["title"].lower() or query.lower() in r["content"].lower()]
         except Exception as db_error:
             logger.warning(f"MongoDB search error, using mock data: {db_error}")
-            # Mock search results for demo
-            results = [
-                {"_id": "adventure1", "title": "The Great Adventure", "content": "An exciting tale of discovery..."},
-                {"_id": "forest", "title": "Magical Forest Stories", "content": "Stories from the enchanted woods..."},
-                {"_id": "goma", "title": "Tales from Goma", "content": "Local stories from the children of Goma..."}
-            ]
+            results = [r for r in MOCK_SEARCH_RESULTS if query.lower() in r["title"].lower() or query.lower() in r["content"].lower()]
         
         # Convert ObjectId to string for JSON serialization
         for result in results:
