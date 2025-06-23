@@ -1,0 +1,65 @@
+/* static/css/style.css */
+
+body {
+    font-family: 'Roboto Mono', monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+}
+
+.card {
+    border: 1px solid #495057;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+}
+
+.btn-primary {
+    background-color: #00ff88;
+    border-color: #00ff88;
+    color: #000;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #00e67a;
+    border-color: #00e67a;
+    color: #000;
+}
+
+.radio-icon {
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+.story-text p {
+    font-size: 1.1rem;
+    line-height: 1.7;
+}
+
+.list-group-item-dark {
+    transition: all 0.2s ease-in-out;
+}
+
+.list-group-item-dark:hover {
+    background-color: #00ff88;
+    color: #000;
+    border-color: #00ff88;
+    transform: translateX(5px);
+}
+
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    }
+    50% {
+        transform: scale(1.1);
+        text-shadow: 0 0 15px rgba(0, 255, 136, 1);
+    }
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+    }
+} 

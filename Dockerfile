@@ -4,11 +4,21 @@ FROM python:3.9-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Check python version before anything
+RUN python --version
+
 # Copy the requirements file into the container at /app
 COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Using --verbose to get more output
+RUN pip install --no-cache-dir --verbose -r requirements.txt
+
+# Check for dependency conflicts
+RUN pip check
+
+# Check python version after install
+RUN python --version
 
 # Copy the rest of the application's code into the container at /app
 COPY . .
@@ -19,6 +29,8 @@ EXPOSE 8080
 # Define environment variable
 ENV PORT 8080
 
-# Run app.py when the container launches
-# Use Gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"] 
+# Use Gunicorn for production with verbose logging
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "--log-level", "debug", "--log-file", "-", "app:app"]
+
+# Use Python's built-in server for debugging to get raw logs
+# CMD ["python", "app.py"] 

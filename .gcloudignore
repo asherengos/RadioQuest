@@ -1,0 +1,21 @@
+# This file tells gcloud which files to ignore when deploying.
+# It overrides the .gitignore file.
+
+.gcloudignore
+.git
+.gitignore
+
+# Python virtual environment and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Local environment and credential files
+.env
+*.env.local
+local.properties
+*.key
+
+# Log files
+*.log 
