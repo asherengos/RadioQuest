@@ -105,18 +105,19 @@ except Exception as e:
     logger.error(traceback.format_exc())
     # Don't exit, let it try to run anyway for debugging
 
-# --- ADK-Style Orchestrator for Demo ---
+# --- Enhanced ADK-Style Orchestrator for Demo ---
 class ADKOrchestrator:
     def __init__(self):
         self.workflow_steps = []
         
     def add_workflow_step(self, agent_name, action, status, result=None, error=None):
         """Add a step to the workflow for demo purposes"""
+        import time
         step = {
             "agent": agent_name,
             "action": action,
             "status": status,
-            "timestamp": "2025-06-23T12:30:00Z"
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         }
         if result:
             step["result"] = result
@@ -125,53 +126,78 @@ class ADKOrchestrator:
         self.workflow_steps.append(step)
         
     def orchestrate_story_fetch(self, story_id):
-        """Orchestrate story fetching with agent-style workflow"""
+        """Orchestrate story fetching with enhanced agent-style workflow"""
         self.workflow_steps = []  # Reset workflow
         
-        # Step 1: Story Agent fetches data
-        self.add_workflow_step("StoryAgent", "fetch_story", "started")
+        # Step 1: Story Agent initialization
+        self.add_workflow_step("StoryAgent", "init", "started")
+        self.add_workflow_step("StoryAgent", "init", "success", {"agent_type": "content_fetcher", "target": story_id})
+        
+        # Step 2: Database connection attempt
+        self.add_workflow_step("StoryAgent", "connect_db", "started")
         
         try:
             # Try MongoDB first
             if stories_collection is not None:
                 try:
+                    self.add_workflow_step("StoryAgent", "connect_db", "success", {"source": "mongodb_atlas"})
+                    self.add_workflow_step("StoryAgent", "fetch_story", "started", {"query": {"_id": story_id}})
+                    
                     story = stories_collection.find_one({"_id": story_id})
                     if story:
-                        self.add_workflow_step("StoryAgent", "fetch_story", "success", {"source": "mongodb", "title": story.get("title")})
+                        self.add_workflow_step("StoryAgent", "fetch_story", "success", {"source": "mongodb", "title": story.get("title"), "content_length": len(story.get("content", ""))})
                         return story
                     else:
-                        self.add_workflow_step("StoryAgent", "fetch_story", "not_found_in_db")
+                        self.add_workflow_step("StoryAgent", "fetch_story", "not_found", {"message": "Story not found in database"})
                 except Exception as e:
-                    self.add_workflow_step("StoryAgent", "fetch_story", "db_error", error=str(e))
+                    self.add_workflow_step("StoryAgent", "fetch_story", "error", {"error_type": "database_auth", "message": str(e)})
+            else:
+                self.add_workflow_step("StoryAgent", "connect_db", "failed", {"reason": "mongodb_not_initialized"})
             
-            # Fallback to mock data
+            # Step 3: Fallback to mock data system
+            self.add_workflow_step("StoryAgent", "fallback_init", "started")
             story = MOCK_STORIES.get(story_id)
             if story:
-                self.add_workflow_step("StoryAgent", "fetch_story", "success", {"source": "mock_data", "title": story.get("title")})
+                self.add_workflow_step("StoryAgent", "fallback_fetch", "success", {
+                    "source": "mock_data", 
+                    "title": story.get("title"), 
+                    "content_length": len(story.get("content", "")),
+                    "cultural_context": "goma_virunga"
+                })
+                self.add_workflow_step("StoryAgent", "complete", "success", {"final_source": "mock_data_fallback"})
                 return story
             else:
-                self.add_workflow_step("StoryAgent", "fetch_story", "error", error="Story not found")
+                self.add_workflow_step("StoryAgent", "fallback_fetch", "error", {"message": "Story not found in mock data"})
+                self.add_workflow_step("StoryAgent", "complete", "failed")
                 raise ValueError(f"Story {story_id} not found")
                 
         except Exception as e:
-            self.add_workflow_step("StoryAgent", "fetch_story", "error", error=str(e))
+            self.add_workflow_step("StoryAgent", "complete", "error", {"final_error": str(e)})
             raise
             
     def orchestrate_search(self, query):
-        """Orchestrate search with agent-style workflow"""
+        """Orchestrate search with enhanced agent-style workflow"""
         self.workflow_steps = []  # Reset workflow
         
-        # Step 1: Search Agent processes query
-        self.add_workflow_step("SearchAgent", "process_query", "started")
-        self.add_workflow_step("SearchAgent", "process_query", "success", {"query": query})
+        # Step 1: Search Agent initialization
+        self.add_workflow_step("SearchAgent", "init", "started")
+        self.add_workflow_step("SearchAgent", "init", "success", {"agent_type": "query_processor", "query": query})
         
-        # Step 2: Execute search
-        self.add_workflow_step("SearchAgent", "execute_search", "started")
+        # Step 2: Query validation and preprocessing
+        self.add_workflow_step("SearchAgent", "validate_query", "started")
+        if len(query.strip()) < 2:
+            self.add_workflow_step("SearchAgent", "validate_query", "error", {"reason": "query_too_short"})
+            raise ValueError("Query too short")
+        self.add_workflow_step("SearchAgent", "validate_query", "success", {"processed_query": query.lower().strip()})
+        
+        # Step 3: Database search attempt
+        self.add_workflow_step("SearchAgent", "execute_search", "started", {"target": "mongodb_atlas"})
         
         try:
             # Try MongoDB first
             if stories_collection is not None:
                 try:
+                    self.add_workflow_step("SearchAgent", "db_connection", "success")
                     results = list(stories_collection.find({
                         "$or": [
                             {"title": {"$regex": query, "$options": "i"}},
@@ -183,36 +209,70 @@ class ADKOrchestrator:
                         # Convert ObjectId to string
                         for result in results:
                             result['_id'] = str(result['_id'])
-                        self.add_workflow_step("SearchAgent", "execute_search", "success", {"source": "mongodb", "count": len(results)})
+                        self.add_workflow_step("SearchAgent", "execute_search", "success", {
+                            "source": "mongodb", 
+                            "results_count": len(results),
+                            "first_result": results[0].get("title") if results else None
+                        })
+                        self.add_workflow_step("SearchAgent", "complete", "success", {"final_source": "mongodb"})
                         return results
                     else:
-                        self.add_workflow_step("SearchAgent", "execute_search", "no_results_in_db")
+                        self.add_workflow_step("SearchAgent", "execute_search", "no_results", {"source": "mongodb"})
                 except Exception as e:
-                    self.add_workflow_step("SearchAgent", "execute_search", "db_error", error=str(e))
+                    self.add_workflow_step("SearchAgent", "execute_search", "error", {"error_type": "database_auth", "message": str(e)})
+            else:
+                self.add_workflow_step("SearchAgent", "db_connection", "failed", {"reason": "mongodb_not_initialized"})
             
-            # Fallback to mock search
-            results = [r for r in MOCK_SEARCH_RESULTS if query.lower() in r["title"].lower() or query.lower() in r["content"].lower()]
-            self.add_workflow_step("SearchAgent", "execute_search", "success", {"source": "mock_data", "count": len(results)})
+            # Step 4: Fallback search in mock data
+            self.add_workflow_step("SearchAgent", "fallback_search", "started", {"target": "mock_data_system"})
+            results = [s for s in MOCK_SEARCH_RESULTS if query.lower() in s["title"].lower() or query.lower() in s["content"].lower()]
+            self.add_workflow_step("SearchAgent", "fallback_search", "success", {
+                "source": "mock_data", 
+                "results_count": len(results),
+                "cultural_context": "goma_themed_content"
+            })
+            self.add_workflow_step("SearchAgent", "complete", "success", {"final_source": "mock_data_fallback"})
             return results
             
         except Exception as e:
-            self.add_workflow_step("SearchAgent", "execute_search", "error", error=str(e))
+            self.add_workflow_step("SearchAgent", "complete", "error", {"final_error": str(e)})
             raise
             
     def orchestrate_tts(self, story_content, story_id):
-        """Orchestrate TTS generation with agent-style workflow"""
-        # Step 1: TTS Agent prepares content
-        self.add_workflow_step("TTSAgent", "prepare_content", "started")
-        self.add_workflow_step("TTSAgent", "prepare_content", "success", {"content_length": len(story_content)})
+        """Orchestrate TTS generation with enhanced agent-style workflow"""
+        # Step 1: TTS Agent initialization
+        self.add_workflow_step("TTSAgent", "init", "started")
+        self.add_workflow_step("TTSAgent", "init", "success", {"agent_type": "audio_generator", "target_story": story_id})
         
-        # Step 2: Generate audio
-        self.add_workflow_step("TTSAgent", "generate_audio", "started")
+        # Step 2: Content preparation
+        self.add_workflow_step("TTSAgent", "prepare_content", "started")
+        content_length = len(story_content)
+        if content_length == 0:
+            self.add_workflow_step("TTSAgent", "prepare_content", "error", {"reason": "empty_content"})
+            raise ValueError("No content to synthesize")
+        
+        self.add_workflow_step("TTSAgent", "prepare_content", "success", {
+            "content_length": content_length,
+            "estimated_duration": f"{content_length // 10}s",
+            "language_target": "en-NG"
+        })
+        
+        # Step 3: TTS service connection
+        self.add_workflow_step("TTSAgent", "connect_tts", "started")
+        if tts_client is None:
+            self.add_workflow_step("TTSAgent", "connect_tts", "error", {"reason": "tts_client_not_initialized"})
+            self.add_workflow_step("TTSAgent", "complete", "failed")
+            raise ValueError("TTS client not initialized")
+        
+        self.add_workflow_step("TTSAgent", "connect_tts", "success", {"service": "google_cloud_tts"})
+        
+        # Step 4: Audio synthesis
+        self.add_workflow_step("TTSAgent", "synthesize_audio", "started", {
+            "voice": "en-NG-Wavenet-A", 
+            "format": "MP3"
+        })
         
         try:
-            if tts_client is None:
-                self.add_workflow_step("TTSAgent", "generate_audio", "error", error="TTS client not initialized")
-                raise ValueError("TTS client not initialized")
-                
             synthesis_input = texttospeech.SynthesisInput(text=story_content)
             voice = texttospeech.VoiceSelectionParams(
                 language_code="en-NG",
@@ -228,16 +288,24 @@ class ADKOrchestrator:
                 audio_config=audio_config
             )
             
-            # Save audio file
+            # Step 5: Audio file generation
+            self.add_workflow_step("TTSAgent", "synthesize_audio", "success", {"audio_bytes": len(response.audio_content)})
+            self.add_workflow_step("TTSAgent", "save_audio", "started")
+            
             audio_path = f"/tmp/{story_id}.mp3"
             with open(audio_path, "wb") as out:
                 out.write(response.audio_content)
                 
-            self.add_workflow_step("TTSAgent", "generate_audio", "success", {"audio_path": audio_path, "voice": "en-NG-Wavenet-A"})
+            self.add_workflow_step("TTSAgent", "save_audio", "success", {
+                "file_path": audio_path,
+                "cultural_voice": "nigerian_english"
+            })
+            self.add_workflow_step("TTSAgent", "complete", "success", {"final_output": audio_path})
             return audio_path
             
         except Exception as e:
-            self.add_workflow_step("TTSAgent", "generate_audio", "error", error=str(e))
+            self.add_workflow_step("TTSAgent", "synthesize_audio", "error", {"error_type": "synthesis_failed", "message": str(e)})
+            self.add_workflow_step("TTSAgent", "complete", "failed")
             raise
 
 # Initialize orchestrator
