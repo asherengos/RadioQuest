@@ -21,7 +21,7 @@ story_data = {
     "intro": {
         "_id": "intro",
         "title": "The Journey Begins",
-        "text": "You awaken to the gentle hum of the Congo rainforest. Your name is Koko, and a message crackles over your small, solar-powered radio. It's a plea from a nearby village – their children are lost, and a mysterious sickness is spreading. The transmission mentioned a hidden river, the 'River of Life,' said to hold the cure. With your radio as your only guide, you step out of your hut. The air is thick with the scent of damp earth and flowers. Before you, the path splits. To your left, you see fresh animal tracks leading into the dense jungle. Straight ahead, a steep hill rises, promising a view of the surrounding area. To your right, a rickety rope bridge sways over a wide chasm. The choice is yours.",
+        "text": "You awaken to the gentle hum of the Congo rainforest. Your name is Kofi, and a message crackles over your small, solar-powered radio. It's a plea from a nearby village – their children are lost, and a mysterious sickness is spreading. The transmission mentioned a hidden river, the 'River of Life,' said to hold the cure. With your radio as your only guide, you step out of your hut. The air is thick with the scent of damp earth and flowers. Before you, the path splits. To your left, you see fresh animal tracks leading into the dense jungle. Straight ahead, a steep hill rises, promising a view of the surrounding area. To your right, a rickety rope bridge sways over a wide chasm. The choice is yours.",
         "choices": [
             {"text": "Follow the animal tracks", "next_segment_id": "follow_tracks"},
             {"text": "Climb the hill for a better view", "next_segment_id": "climb_hill"},

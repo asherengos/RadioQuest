@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, abort, url_for, jsonify
+from flask import Flask, render_template, request, abort, url_for, jsonify, redirect
 import logging
 import traceback
 import os
@@ -7,9 +7,11 @@ from google.cloud import texttospeech
 import json
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
+from flask_compress import Compress
 
 # --- Flask App Initialization ---
 app = Flask(__name__)
+Compress(app)
 
 # --- Logging Configuration ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -19,38 +21,93 @@ logger = logging.getLogger(__name__)
 MOCK_STORIES = {
     "intro": {
         "_id": "intro",
-        "title": "Welcome to Goma",
-        "content": "Once upon a time in the beautiful city of Goma, nestled between Lake Kivu and the Virunga Mountains, a group of curious children discovered something magical. Through their solar-powered radios, they could hear stories that came alive with voices from their own land. This is RadioQuest - where every story is an adventure, and every child is the hero of their own tale.",
+        "title": "The Journey Begins",
+        "content": "You awaken to the gentle hum of the Congo rainforest. Your name is Kofi, and a message crackles over your small, solar-powered radio. It's a plea from a nearby village – their children are lost, and a mysterious sickness is spreading. The transmission mentioned a hidden river, the 'River of Life,' said to hold the cure. With your radio as your only guide, you step out of your hut. The air is thick with the scent of damp earth and flowers. Before you, the path splits. To your left, you see fresh animal tracks leading into the dense jungle. Straight ahead, a steep hill rises, promising a view of the surrounding area. To your right, a rickety rope bridge sways over a wide chasm. The choice is yours.",
         "choices": [
-            {"id": "forest", "text": "Explore the enchanted forest"},
-            {"id": "mountain", "text": "Climb the mystical mountain"}
+            {"id": "follow_tracks", "text": "Follow the animal tracks"},
+            {"id": "climb_hill", "text": "Climb the hill for a better view"},
+            {"id": "cross_bridge", "text": "Bravely cross the rickety bridge"}
         ]
     },
-    "forest": {
-        "_id": "forest", 
-        "title": "The Enchanted Forest Adventure",
-        "content": "You venture into the lush forests of Virunga, where ancient trees whisper secrets and colorful birds guide your path. The children of Goma often play here, but today you discover something extraordinary - a hidden grove where stories grow on trees like magical fruit, waiting to be shared with the world.",
+    "follow_tracks": {
+        "_id": "follow_tracks",
+        "title": "Into the Jungle",
+        "content": "You decide to trust the wisdom of the forest creatures. The tracks are small, like those of a forest antelope. You follow them deeper into the jungle, pushing aside giant ferns and ducking under hanging vines. The canopy above is so thick that the sunlight only dapples the forest floor. Strange bird calls echo around you, and you hear the chatter of monkeys high in the trees. After walking for what feels like an hour, the tracks lead you to a clearing. In the center of the clearing is a massive, ancient baobab tree, its branches reaching towards the sky like gnarled arms. A series of intricate carvings cover its trunk, depicting stories of the forest. At the base of the tree, you see a small, leather-bound journal, half-buried in the leaves. It looks very old. Do you open the ancient journal or continue following the tracks, which seem to lead past the tree and deeper into the shadows?",
         "choices": [
-            {"id": "village", "text": "Return to the village"},
-            {"id": "lake", "text": "Head to Lake Kivu"}
+            {"id": "open_journal", "text": "Open the ancient journal"},
+            {"id": "continue_tracks", "text": "Keep following the tracks"}
         ]
     },
-    "mountain": {
-        "_id": "mountain",
-        "title": "Mountain Peak Stories", 
-        "content": "High atop the Virunga Mountains, you find a place where the clouds touch the earth and the views stretch across all of Eastern Africa. Here, the elders say, is where all the best stories begin - with a view so vast it contains infinite possibilities for adventure.",
+    "climb_hill": {
+        "_id": "climb_hill",
+        "title": "The View from Above",
+        "content": "You choose the high ground, hoping for a better sense of direction. The climb is steep and challenging. You scramble over rocks and pull yourself up using sturdy roots. The air grows thinner and cooler as you ascend. Finally, you reach the summit, breathless but rewarded with a spectacular view. The entire valley stretches out before you, a sea of green under a vast blue sky. In the distance, you see a plume of smoke rising – a sign of a settlement, perhaps the lost village! But as you watch, you notice something else. A glint of sunlight reflecting off something metallic, hidden within a cluster of rocks not far from your position. It could be a clue, or it could be nothing. Do you investigate the glint of metal, or do you head straight for the smoke plume in the distance?",
         "choices": [
-            {"id": "intro", "text": "Start a new adventure"},
-            {"id": "village", "text": "Visit the village below"}
+            {"id": "investigate_glint", "text": "Investigate the metallic glint"},
+            {"id": "head_for_smoke", "text": "Head towards the smoke plume"}
         ]
     },
-    "village": {
-        "_id": "village",
-        "title": "Village Life Chronicles",
-        "content": "In the heart of Goma, where families gather around radios as the sun sets behind the mountains, you discover the true magic of storytelling. Here, every voice matters, every choice shapes the future, and every child becomes the author of their own adventure.",
+    "cross_bridge": {
+        "_id": "cross_bridge",
+        "title": "The Chasm of Courage",
+        "content": "You take a deep breath and step onto the rope bridge. It sways wildly with each step, the wooden planks creaking under your feet. Below you, a deep chasm disappears into the mist. You focus on the other side, moving slowly and deliberately, your knuckles white as you grip the ropes. Halfway across, you hear a screech from above. A large, territorial eagle is circling, unhappy with your presence. It dives towards you, its talons outstretched. You have to think fast. Do you try to scare it away by yelling and waving your arms, or do you make a dash for the other side before it can reach you?",
         "choices": [
-            {"id": "intro", "text": "Begin a new journey"},
-            {"id": "lake", "text": "Walk to Lake Kivu"}
+            {"id": "scare_eagle", "text": "Scare the eagle"},
+            {"id": "dash_across", "text": "Dash for the other side"}
+        ]
+    },
+    "open_journal": {
+        "_id": "open_journal",
+        "title": "Secrets of the Baobab",
+        "content": "You kneel beside the ancient baobab and gently brush the leaves from the journal. Its cover is cracked, the pages yellowed with age. As you open it, a wave of history washes over you—the journal belonged to a healer from the village, who wrote of a hidden spring deep in the jungle, guarded by a spirit called Mokele. The entries warn of dangers: quicksand, venomous snakes, and a riddle that must be answered to pass. Suddenly, you hear a rustle behind you. Do you hide and observe, or call out to whoever is there?",
+        "choices": [
+            {"id": "hide_observe", "text": "Hide and observe"},
+            {"id": "call_out", "text": "Call out bravely"}
+        ]
+    },
+    "continue_tracks": {
+        "_id": "continue_tracks",
+        "title": "Deeper Shadows",
+        "content": "You decide to trust your instincts and continue following the tracks. The jungle grows darker and the air thickens. You hear distant drumming—perhaps a village ceremony, or a warning? Suddenly, the tracks split: one set leads toward a thicket of bamboo, the other toward a muddy riverbank. Do you investigate the bamboo thicket or approach the riverbank?",
+        "choices": [
+            {"id": "bamboo_thicket", "text": "Investigate the bamboo thicket"},
+            {"id": "riverbank", "text": "Approach the riverbank"}
+        ]
+    },
+    "investigate_glint": {
+        "_id": "investigate_glint",
+        "title": "The Shining Clue",
+        "content": "Curiosity gets the better of you. You carefully make your way to the cluster of rocks and discover a small, metal compass—its needle spinning wildly. Next to it, a faded photograph of a smiling family. On the back, a message: 'Trust the river when the path is unclear.' As you ponder its meaning, you hear footsteps behind you. Do you hide and watch, or confront whoever is coming?",
+        "choices": [
+            {"id": "hide_watch", "text": "Hide and watch"},
+            {"id": "confront_stranger", "text": "Confront the stranger"}
+        ]
+    },
+    "head_for_smoke": {
+        "_id": "head_for_smoke",
+        "title": "The Village Revealed",
+        "content": "You decide the smoke is your best lead. Descending the hill, you move quickly but carefully, avoiding loose rocks. As you approach, you hear voices and laughter—the village is alive! But the mood is tense; people are gathered around a sick child. The village elder greets you, asking if you have come to help. Do you offer to help the child, or ask about the River of Life first?",
+        "choices": [
+            {"id": "help_child", "text": "Help the child immediately"},
+            {"id": "ask_river", "text": "Ask about the River of Life"}
+        ]
+    },
+    "scare_eagle": {
+        "_id": "scare_eagle",
+        "title": "The Eagle's Test",
+        "content": "You wave your arms and shout, trying to scare the eagle away. The bird screeches and swoops closer, but at the last moment, it veers off, dropping a shiny object onto the bridge. It's a carved wooden amulet, warm to the touch. As you pick it up, you feel a surge of courage. But the bridge is swaying dangerously. Do you hurry across, or stop to examine the amulet?",
+        "choices": [
+            {"id": "hurry_across", "text": "Hurry across the bridge"},
+            {"id": "examine_amulet", "text": "Examine the amulet"}
+        ]
+    },
+    "dash_across": {
+        "_id": "dash_across",
+        "title": "Leap of Faith",
+        "content": "You sprint across the bridge, heart pounding. The eagle screeches above, but you make it to the other side just as the last plank snaps behind you. Safe, but shaken, you find yourself at a fork: one path leads into a dark cave, the other toward a sunlit clearing. Do you enter the cave or head for the clearing?",
+        "choices": [
+            {"id": "enter_cave", "text": "Enter the cave"},
+            {"id": "sunlit_clearing", "text": "Head for the clearing"}
         ]
     }
 }
@@ -311,6 +368,9 @@ class ADKOrchestrator:
 # Initialize orchestrator
 orchestrator = ADKOrchestrator()
 
+# Vote tracking storage (in production, this would be in MongoDB)
+vote_storage = {}
+
 # --- Routes ---
 
 @app.route('/')
@@ -362,6 +422,31 @@ def index():
         </html>
         '''
 
+@app.route('/submit_choice', methods=['POST'])
+def submit_choice():
+    """Handle choice submissions and track votes"""
+    try:
+        choice_id = request.form.get('choice_id')
+        story_id = request.form.get('story_id')
+        
+        if not choice_id or not story_id:
+            return jsonify({"error": "Missing choice_id or story_id"}), 400
+        
+        # Track the vote
+        vote_key = f"{story_id}_{choice_id}"
+        if vote_key not in vote_storage:
+            vote_storage[vote_key] = 0
+        vote_storage[vote_key] += 1
+        
+        logger.info(f"Vote recorded: {vote_key} = {vote_storage[vote_key]} votes")
+        
+        # Redirect to the chosen story segment
+        return redirect(f"/story/{choice_id}")
+        
+    except Exception as e:
+        logger.error(f"Error submitting choice: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/story/<story_id>')
 def story(story_id):
     """
@@ -395,7 +480,25 @@ def story(story_id):
                 if audio_success:
                     segment['audio_url'] = f"/audio/{story_id}.mp3"
             
-            return render_template('story.html', segment=segment)
+            # Get vote results for this story's choices
+            vote_results = {}
+            if segment.get('choices'):
+                for choice in segment['choices']:
+                    vote_key = f"{story_id}_{choice['id']}"
+                    vote_results[choice['id']] = vote_storage.get(vote_key, 0)
+            
+            # Add recap data (simplified for demo)
+            previous_story = None
+            last_choice = None
+            if story_id != 'intro':
+                previous_story = "In our last adventure, you helped Koko make an important decision in the Congo rainforest."
+                # In a real app, this would come from user session/database
+            
+            return render_template('story.html', 
+                                 segment=segment, 
+                                 vote_results=vote_results,
+                                 previous_story=previous_story,
+                                 last_choice=last_choice)
         else:
             logger.warning(f"Story not found: {story_id}")
             abort(404)
@@ -448,6 +551,76 @@ def search():
         
     except Exception as e:
         logger.error(f"Error in search: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tts/<story_id>')
+def generate_tts(story_id):
+    """Generate Nigerian English TTS for a story segment"""
+    try:
+        # Get the story content
+        segment = None
+        try:
+            if stories_collection is not None:
+                segment = stories_collection.find_one({"_id": story_id})
+        except Exception as db_error:
+            logger.warning(f"MongoDB error, using mock data: {db_error}")
+        
+        if not segment:
+            segment = MOCK_STORIES.get(story_id)
+        
+        if not segment:
+            return jsonify({"error": "Story not found"}), 404
+        
+        # Generate Nigerian English TTS
+        if tts_client is not None:
+            try:
+                # Use Nigerian English voice
+                synthesis_input = texttospeech.SynthesisInput(text=segment['content'])
+                voice = texttospeech.VoiceSelectionParams(
+                    language_code="en-NG",  # Nigerian English
+                    name="en-NG-Standard-A",  # Nigerian female voice
+                    ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
+                )
+                audio_config = texttospeech.AudioConfig(
+                    audio_encoding=texttospeech.AudioEncoding.MP3
+                )
+                
+                response = tts_client.synthesize_speech(
+                    input=synthesis_input, 
+                    voice=voice, 
+                    audio_config=audio_config
+                )
+                
+                # Save audio file
+                audio_path = f"/tmp/{story_id}.mp3"
+                with open(audio_path, "wb") as out:
+                    out.write(response.audio_content)
+                
+                logger.info(f"Nigerian TTS audio generated for {story_id}")
+                return jsonify({
+                    "status": "success",
+                    "audio_url": f"/audio/{story_id}.mp3",
+                    "voice": "en-NG-Standard-A (Nigerian English)",
+                    "message": "Nigerian English TTS generated successfully"
+                })
+                
+            except Exception as tts_error:
+                logger.error(f"TTS generation failed: {tts_error}")
+                return jsonify({
+                    "status": "error",
+                    "error": str(tts_error),
+                    "fallback": "TTS service temporarily unavailable"
+                }), 500
+        else:
+            return jsonify({
+                "status": "demo",
+                "message": "TTS client not initialized - this would generate Nigerian English audio",
+                "voice": "en-NG-Standard-A (Nigerian English)",
+                "demo_url": f"/audio/{story_id}.mp3"
+            })
+            
+    except Exception as e:
+        logger.error(f"Error in TTS endpoint: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/audio/<audio_id>')
