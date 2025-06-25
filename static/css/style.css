@@ -60,14 +60,8 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: url('/static/images/africa_hero_bg_unsplash.webp?v=2') no-repeat center center;
+    background: url('/static/images/blob.jpg') no-repeat center center;
     background-size: cover;
-}
-@supports not (background-image: url('/static/images/africa_hero_bg_unsplash.webp?v=2')) {
-    .hero-section {
-        background: url('/static/images/africa_hero_bg_unsplash.jpg?v=2') no-repeat center center;
-        background-size: cover;
-    }
 }
 
 .hero-section::before {
@@ -81,6 +75,11 @@ h1, h2, h3, h4, h5, h6 {
 .hero-section > * {
     position: relative;
     z-index: 2;
+}
+
+.africa-hero-container, .africa-map-background {
+    background: none !important;
+    box-shadow: none !important;
 }
 
 .africa-hero-container {
@@ -230,6 +229,9 @@ h1, h2, h3, h4, h5, h6 {
     text-align: center;
     width: 100%;
     max-width: 700px;
+    background: none !important;
+    box-shadow: none !important;
+    filter: none !important;
 }
 
 .hero-main-title {
