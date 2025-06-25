@@ -23,6 +23,9 @@ RUN python --version
 # Copy the rest of the application's code into the container at /app
 COPY . .
 
+# Run cache-busting script to append ?v=<timestamp> to static asset URLs in CSS
+RUN python cache_buster.py
+
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 

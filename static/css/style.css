@@ -60,12 +60,12 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: url('/static/images/africa_hero_bg_unsplash.webp') no-repeat center center;
+    background: url('/static/images/africa_hero_bg_unsplash.webp?v=2') no-repeat center center;
     background-size: cover;
 }
-@supports not (background-image: url('/static/images/africa_hero_bg_unsplash.webp')) {
+@supports not (background-image: url('/static/images/africa_hero_bg_unsplash.webp?v=2')) {
     .hero-section {
-        background: url('/static/images/africa_hero_bg_unsplash.jpg') no-repeat center center;
+        background: url('/static/images/africa_hero_bg_unsplash.jpg?v=2') no-repeat center center;
         background-size: cover;
     }
 }
