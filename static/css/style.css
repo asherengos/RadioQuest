@@ -60,7 +60,7 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: url('/static/images/blob.jpg?v=2') no-repeat center center;
+    background: url('/static/images/radio_hero_bg.jpg?v=1') no-repeat center center;
     background-size: cover;
 }
 
